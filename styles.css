@@ -10,6 +10,7 @@ body {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     min-height: 100vh;
     color: white;
+    overflow-x: hidden;
 }
 
 /* Login Page Styles */
@@ -105,16 +106,21 @@ h1 {
     box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
 }
 
+.enter-btn:active {
+    transform: translateY(0);
+}
+
 .error-message {
     color: #ff6b6b;
     margin-top: 15px;
     font-size: 0.9rem;
     min-height: 20px;
+    font-weight: bold;
 }
 
 .hint {
     color: #888;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     margin-top: 20px;
     line-height: 1.5;
 }
@@ -180,12 +186,17 @@ h1 {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
 }
 
 #launchButton:hover {
     background: #ff5252;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+#launchButton:active {
+    transform: translateY(0);
 }
 
 .game-frame {
@@ -198,125 +209,4 @@ h1 {
 }
 
 iframe {
-    width: 100%;
-    height: 700px;
-    border: none;
-}
-
-.instructions {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 20px;
-    margin-top: 30px;
-    text-align: left;
-    max-width: 800px;
-    margin: 30px auto;
-}
-
-.instructions h2 {
-    margin-top: 0;
-    color: #4fc3f7;
-}
-
-.instructions ul {
-    padding-left: 20px;
-}
-
-.instructions li {
-    margin-bottom: 10px;
-    line-height: 1.5;
-}
-
-.example {
-    font-style: italic;
-    color: #ffcc80;
-    margin-top: 15px;
-}
-
-.back-btn {
-    background: #333;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    margin-top: 20px;
-}
-
-.back-btn:hover {
-    background: #555;
-    transform: translateY(-1px);
-}
-
-/* Fullscreen Growden Styles */
-.fullscreen-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: #000;
-    display: none;
-}
-
-.fullscreen-frame {
-    position: absolute;
-    top: 50px;
-    left: 0;
-    width: 100%;
-    height: calc(100vh - 50px);
-}
-
-.fullscreen-frame iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-
-.fullscreen-container .header {
-    background: rgba(0, 0, 0, 0.8);
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
-
-.fullscreen-container .game-title {
-    font-size: 1.5rem;
-    color: #4fc3f7;
-}
-
-footer {
-    margin-top: 30px;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .game-input {
-        flex-direction: column;
-        align-items: center;
-    }
-   
-    #gameName {
-        width: 100%;
-        max-width: 300px;
-    }
-   
-    iframe {
-        height: 500px;
-    }
-   
-    .login-container {
-        padding: 30px 20px;
-    }
-}
+    width:
