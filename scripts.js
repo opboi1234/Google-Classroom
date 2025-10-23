@@ -1,6 +1,39 @@
 // Page management
 let currentPage = 'login';
 
+// Intercept popup attempts from CloudMoon iframe
+window.addEventListener('message', function(event) {
+    // Check if message is from CloudMoon iframe trying to open a new window
+    console.log('Message received:', event.data);
+    
+    // If the message contains a URL that should be loaded in the iframe
+    if (typeof event.data === 'string' && event.data.includes('http')) {
+        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+        if (cloudmoonFrame && currentPage === 'cloudmoon') {
+            console.log('Redirecting popup URL to iframe:', event.data);
+            cloudmoonFrame.src = event.data;
+        }
+    }
+});
+
+// Override window.open for CloudMoon iframe (inject this into iframe if possible)
+const originalWindowOpen = window.open;
+window.open = function(url, target, features) {
+    console.log('window.open intercepted:', url);
+    
+    // If we're on CloudMoon page, redirect to iframe instead
+    if (currentPage === 'cloudmoon' && url) {
+        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+        if (cloudmoonFrame) {
+            cloudmoonFrame.src = url;
+            return null; // Prevent actual popup
+        }
+    }
+    
+    // Otherwise use original window.open
+    return originalWindowOpen.call(window, url, target, features);
+};
+
 // Check access code and show appropriate page
 function checkCode() {
     const code = document.getElementById('accessCode').value.trim();
@@ -17,6 +50,10 @@ function checkCode() {
             break;
         case '818':
             showPage('roblox');
+            errorMessage.textContent = '';
+            break;
+        case '919':
+            showPage('cloudmoon');
             errorMessage.textContent = '';
             break;
         default:
@@ -39,6 +76,7 @@ function showPage(page) {
     document.getElementById('launcherPage').style.display = 'none';
     document.getElementById('growdenPage').style.display = 'none';
     document.getElementById('robloxPage').style.display = 'none';
+    document.getElementById('cloudmoonPage').style.display = 'none';
    
     // Show requested page
     switch(page) {
@@ -62,6 +100,40 @@ function showPage(page) {
             // Reload Roblox iframe when page is shown
             const robloxFrame = document.getElementById('robloxFrame');
             robloxFrame.src = robloxFrame.src;
+            break;
+        case 'cloudmoon':
+            document.getElementById('cloudmoonPage').style.display = 'block';
+            // Load CloudMoon iframe
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            if (!cloudmoonFrame.src || cloudmoonFrame.src === 'about:blank') {
+                cloudmoonFrame.src = 'https://web.cloudmoonapp.com/';
+            }
+            
+            // Try to inject popup interceptor into iframe (may be blocked by CORS)
+            cloudmoonFrame.onload = function() {
+                try {
+                    const iframeWindow = cloudmoonFrame.contentWindow;
+                    
+                    // Inject script to intercept window.open in iframe
+                    const script = iframeWindow.document.createElement('script');
+                    script.textContent = `
+                        (function() {
+                            const originalOpen = window.open;
+                            window.open = function(url, target, features) {
+                                console.log('Intercepted popup in iframe:', url);
+                                // Send message to parent window
+                                window.parent.postMessage(url, '*');
+                                return null; // Prevent popup
+                            };
+                        })();
+                    `;
+                    iframeWindow.document.head.appendChild(script);
+                    console.log('Successfully injected popup interceptor into CloudMoon iframe');
+                } catch (e) {
+                    console.log('Could not inject script into iframe (CORS restriction):', e.message);
+                    console.log('Popup interception may not work for cross-origin iframes');
+                }
+            };
             break;
     }
 }
@@ -93,12 +165,8 @@ function launchGame() {
             // Extract game identifier from URL
             const url = new URL(input);
             const pathParts = url.pathname.split('/');
-            const gameIdentifier = pathParts[pathParts.length - 1]; // e.g., "grow-a-garden---growden-io"
+            const gameIdentifier = pathParts[pathParts.length - 1];
            
-            // Convert to iframe format:
-            // 1. Remove everything after --- if it exists
-            // 2. Replace hyphens with spaces for title
-            // 3. Replace spaces with hyphens for iframe URL
             const gameNameForTitle = gameIdentifier.split('---')[0].replace(/-/g, ' ');
             gameTitle = gameNameForTitle.replace(/\b\w/g, l => l.toUpperCase());
            
@@ -112,11 +180,9 @@ function launchGame() {
     // Check if input is a games.crazygames.com URL
     else if (input.includes('games.crazygames.com')) {
         newSrc = input;
-        // Extract game name from URL for display
         try {
             const urlParts = new URL(input).pathname.split('/');
             gameTitle = urlParts[urlParts.length - 2] || 'Unknown Game';
-            // Format game title: replace hyphens with spaces and capitalize words
             gameTitle = gameTitle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         } catch (e) {
             gameTitle = 'Custom URL';
@@ -124,10 +190,7 @@ function launchGame() {
     }
     // Treat as game name
     else {
-        // Format the game name: replace spaces with hyphens and make lowercase
         const formattedGameName = input.replace(/\s+/g, '-').toLowerCase();
-       
-        // Construct the new iframe source URL
         newSrc = `https://games.crazygames.com/en_US/${formattedGameName}/index.html`;
         gameTitle = input;
     }
@@ -139,7 +202,6 @@ function launchGame() {
     // Update the game title display
     document.getElementById('currentGame').textContent = gameTitle;
    
-    // Show loading message
     console.log(`🎮 Loading game: ${gameTitle}`);
     console.log(`📍 URL: ${newSrc}`);
 }
@@ -181,6 +243,16 @@ document.addEventListener('DOMContentLoaded', function() {
    
     growdenFrame.addEventListener('error', function() {
         console.error('❌ Failed to load Growden.io');
+    });
+    
+    // Add loading detection for CloudMoon iframe
+    const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+    cloudmoonFrame.addEventListener('load', function() {
+        console.log('✅ CloudMoon loaded');
+    });
+   
+    cloudmoonFrame.addEventListener('error', function() {
+        console.error('❌ Failed to load CloudMoon');
     });
 });
 
@@ -230,22 +302,8 @@ console.log('%cAccess Codes:', 'color: #ff6b6b; font-size: 14px; font-weight: bo
 console.log('%c918 - CrazyGames Launcher', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c819 - Growden.io', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c818 - Roblox Cloud Gaming', 'color: #4fc3f7; font-size: 12px;');
+console.log('%c919 - CloudMoon Gaming', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c\nPress ESC to return to login', 'color: #888; font-size: 10px;');
-
-// Helper function to check if iframe is accessible (for debugging)
-function checkIframeStatus(iframeId) {
-    const iframe = document.getElementById(iframeId);
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (iframeDoc) {
-            console.log(`✅ ${iframeId} is accessible`);
-            return true;
-        }
-    } catch (e) {
-        console.log(`⚠️ ${iframeId} is blocked by CORS (this is normal for external sites)`);
-        return false;
-    }
-}
 
 // Auto-clear access code on focus
 document.getElementById('accessCode').addEventListener('focus', function() {
@@ -261,14 +319,3 @@ document.getElementById('gameName').addEventListener('focus', function() {
 document.getElementById('gameName').addEventListener('blur', function() {
     this.style.transform = 'scale(1)';
 });
-
-// Add shake animation CSS dynamically
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-        20%, 40%, 60%, 80% { transform: translateX(10px); }
-    }
-`;
-document.head.appendChild(style);
