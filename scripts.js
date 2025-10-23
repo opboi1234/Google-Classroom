@@ -1,123 +1,37 @@
 // Page management
 let currentPage = 'login';
+let openedWindow = null;
+let checkInterval = null;
 
-// Store reference to any popup windows
-let popupWindows = [];
-
-// Intercept ALL window.open calls globally
+// Override window.open to capture the URL and redirect to iframe
 (function() {
     const originalWindowOpen = window.open;
+    
     window.open = function(url, target, features) {
-        console.log('🔒 window.open intercepted:', url, 'Target:', target);
+        console.log('🔍 window.open called with URL:', url);
         
-        // If we're on CloudMoon page, prevent popup and load in iframe
+        // If on CloudMoon page, capture the URL and load in iframe
         if (currentPage === 'cloudmoon' && url) {
+            console.log('✅ Intercepted! Loading in iframe:', url);
             const cloudmoonFrame = document.getElementById('cloudmoonFrame');
             if (cloudmoonFrame) {
-                console.log('✅ Redirecting to iframe instead of popup:', url);
                 cloudmoonFrame.src = url;
-                return {
-                    closed: false,
-                    close: function() { console.log('Fake popup closed'); },
-                    focus: function() { console.log('Fake popup focused'); }
-                }; // Return fake window object
             }
-        }
-        
-        // For other cases, allow popup but track it
-        const popup = originalWindowOpen.call(window, url, target, features);
-        if (popup && currentPage === 'cloudmoon') {
-            popupWindows.push(popup);
-            console.log('⚠️ Popup opened, attempting to capture URL...');
             
-            // Try to get URL and close popup immediately
-            setTimeout(() => {
-                try {
-                    if (popup && !popup.closed) {
-                        const popupUrl = popup.location.href;
-                        console.log('📍 Captured popup URL:', popupUrl);
-                        popup.close();
-                        
-                        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-                        if (cloudmoonFrame && popupUrl && popupUrl !== 'about:blank') {
-                            cloudmoonFrame.src = popupUrl;
-                        }
-                    }
-                } catch (e) {
-                    console.log('❌ Could not access popup URL (CORS):', e.message);
-                    // Popup is cross-origin, we can't get the URL
-                    // Try to close it anyway
-                    if (popup && !popup.closed) {
-                        popup.close();
-                        console.log('🔒 Closed popup without capturing URL');
-                    }
-                }
-            }, 100);
+            // Return a fake window object so the site thinks it opened
+            return {
+                closed: false,
+                close: function() {},
+                focus: function() {},
+                blur: function() {},
+                postMessage: function() {}
+            };
         }
         
-        return popup;
+        // For other pages, use original behavior
+        return originalWindowOpen.call(window, url, target, features);
     };
 })();
-
-// Monitor for popup windows and close them
-setInterval(() => {
-    if (currentPage === 'cloudmoon') {
-        popupWindows.forEach((popup, index) => {
-            try {
-                if (popup && !popup.closed) {
-                    console.log('🔍 Checking popup window...');
-                    try {
-                        const url = popup.location.href;
-                        if (url && url !== 'about:blank') {
-                            console.log('✅ Found URL in popup:', url);
-                            popup.close();
-                            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-                            if (cloudmoonFrame) {
-                                cloudmoonFrame.src = url;
-                            }
-                        }
-                    } catch (e) {
-                        // CORS - can't access URL, just close it
-                        popup.close();
-                        console.log('⚠️ Closed cross-origin popup');
-                    }
-                }
-            } catch (e) {
-                console.log('Error checking popup:', e.message);
-            }
-        });
-        // Clean up closed popups
-        popupWindows = popupWindows.filter(p => p && !p.closed);
-    }
-}, 500);
-
-// Listen for messages from iframe
-window.addEventListener('message', function(event) {
-    console.log('📨 Message received:', event.data, 'from:', event.origin);
-    
-    // Check for URLs in messages
-    if (typeof event.data === 'string') {
-        // Check if it's a URL
-        if (event.data.startsWith('http://') || event.data.startsWith('https://')) {
-            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-            if (cloudmoonFrame && currentPage === 'cloudmoon') {
-                console.log('✅ Loading URL from message:', event.data);
-                cloudmoonFrame.src = event.data;
-            }
-        }
-    }
-    
-    // Check for object with URL property
-    if (typeof event.data === 'object' && event.data !== null) {
-        if (event.data.url) {
-            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-            if (cloudmoonFrame && currentPage === 'cloudmoon') {
-                console.log('✅ Loading URL from message object:', event.data.url);
-                cloudmoonFrame.src = event.data.url;
-            }
-        }
-    }
-});
 
 // Check access code and show appropriate page
 function checkCode() {
@@ -168,11 +82,6 @@ function showPage(page) {
             document.getElementById('loginPage').style.display = 'block';
             document.getElementById('accessCode').value = '';
             document.getElementById('accessCode').focus();
-            // Close any open popups when returning to login
-            popupWindows.forEach(p => {
-                try { if (p && !p.closed) p.close(); } catch(e) {}
-            });
-            popupWindows = [];
             break;
         case 'launcher':
             document.getElementById('launcherPage').style.display = 'block';
@@ -181,23 +90,20 @@ function showPage(page) {
         case 'growden':
             document.getElementById('growdenPage').style.display = 'block';
             const growdenFrame = document.getElementById('growdenFrame');
-            growdenFrame.src = growdenFrame.src;
+            growdenFrame.src = 'https://growden.io/';
             break;
         case 'roblox':
             document.getElementById('robloxPage').style.display = 'block';
             const robloxFrame = document.getElementById('robloxFrame');
-            robloxFrame.src = robloxFrame.src;
+            robloxFrame.src = 'https://www.myandroid.org/playonline/androidemulator.php';
             break;
         case 'cloudmoon':
             document.getElementById('cloudmoonPage').style.display = 'block';
             const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-            
-            // Load CloudMoon
             cloudmoonFrame.src = 'https://web.cloudmoonapp.com/';
             
-            console.log('🎮 CloudMoon loaded. Popup interception active.');
-            console.log('⚠️ Note: Due to CORS, capturing cross-origin popup URLs may not work.');
-            console.log('💡 Popups will be automatically closed if detected.');
+            console.log('🎮 CloudMoon page loaded');
+            console.log('🔒 Popup interception is active');
             break;
     }
 }
@@ -296,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const cloudmoonFrame = document.getElementById('cloudmoonFrame');
     cloudmoonFrame.addEventListener('load', function() {
-        console.log('✅ CloudMoon loaded');
+        console.log('✅ CloudMoon frame loaded');
     });
    
     cloudmoonFrame.addEventListener('error', function() {
@@ -348,7 +254,7 @@ console.log('%cAccess Codes:', 'color: #ff6b6b; font-size: 14px; font-weight: bo
 console.log('%c918 - CrazyGames Launcher', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c819 - Growden.io', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c818 - Roblox Cloud Gaming', 'color: #4fc3f7; font-size: 12px;');
-console.log('%c919 - CloudMoon Gaming (Popup Interception Active)', 'color: #4fc3f7; font-size: 12px;');
+console.log('%c919 - CloudMoon Gaming', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c\nPress ESC to return to login', 'color: #888; font-size: 10px;');
 
 // Auto-clear access code on focus
@@ -364,4 +270,18 @@ document.getElementById('gameName').addEventListener('focus', function() {
 
 document.getElementById('gameName').addEventListener('blur', function() {
     this.style.transform = 'scale(1)';
+});
+
+// Listen for messages from iframes
+window.addEventListener('message', function(event) {
+    console.log('📨 Message received:', event.data);
+    
+    // Check if message contains a URL
+    if (typeof event.data === 'string' && (event.data.startsWith('http://') || event.data.startsWith('https://'))) {
+        if (currentPage === 'cloudmoon') {
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            console.log('✅ Loading URL from message:', event.data);
+            cloudmoonFrame.src = event.data;
+        }
+    }
 });
