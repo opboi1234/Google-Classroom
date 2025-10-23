@@ -89,9 +89,28 @@
         </div>
        
         <div class="fullscreen-frame">
-            <iframe src="https://playminigames.net/embed/clash-royale" style="width: 900px; height: 545px;" frameborder="0"></iframe>
+            <iframe id="robloxFrame" src="https://playminigames.net/embed/clash-royale" style="width: 900px; height: 545px;" frameborder="0"></iframe>
         </div>
     </div> 
+
+    <!-- CloudMoon Fullscreen -->
+    <div id="cloudmoonPage" class="fullscreen-container" style="display: none;">
+        <div class="header">
+            <div class="game-title">🌙 CloudMoon</div>
+            <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+        </div>
+
+        <div class="fullscreen-frame">
+            <iframe
+                id="cloudmoonFrame"
+                src="https://web.cloudmoonapp.com/"
+                allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture; gamepad *"
+                allowfullscreen
+                sandbox="allow-scripts allow-forms allow-same-origin allow-pointer-lock"
+                referrerpolicy="no-referrer">
+            </iframe>
+        </div>
+    </div>
 
     <script src="scripts.js"></script>
 </body>
