@@ -19,6 +19,10 @@ function checkCode() {
             showPage('roblox');
             errorMessage.textContent = '';
             break;
+        case '919':
+            showPage('cloudmoon');
+            errorMessage.textContent = '';
+            break;
         default:
             errorMessage.textContent = '❌ Invalid code. Please try again.';
             // Shake animation for error
@@ -39,6 +43,7 @@ function showPage(page) {
     document.getElementById('launcherPage').style.display = 'none';
     document.getElementById('growdenPage').style.display = 'none';
     document.getElementById('robloxPage').style.display = 'none';
+    document.getElementById('cloudmoonPage').style.display = 'none';
    
     // Show requested page
     switch(page) {
@@ -62,6 +67,12 @@ function showPage(page) {
             // Reload Roblox iframe when page is shown
             const robloxFrame = document.getElementById('robloxFrame');
             robloxFrame.src = robloxFrame.src;
+            break;
+        case 'cloudmoon':
+            document.getElementById('cloudmoonPage').style.display = 'block';
+            // Reload CloudMoon iframe when page is shown
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            cloudmoonFrame.src = cloudmoonFrame.src;
             break;
     }
 }
@@ -165,23 +176,38 @@ document.addEventListener('DOMContentLoaded', function() {
    
     // Add loading detection for Roblox iframe
     const robloxFrame = document.getElementById('robloxFrame');
-    robloxFrame.addEventListener('load', function() {
-        console.log('✅ Roblox cloud gaming loaded');
-    });
-   
-    robloxFrame.addEventListener('error', function() {
-        console.error('❌ Failed to load Roblox');
-    });
+    if (robloxFrame) {
+        robloxFrame.addEventListener('load', function() {
+            console.log('✅ Roblox cloud gaming loaded');
+        });
+       
+        robloxFrame.addEventListener('error', function() {
+            console.error('❌ Failed to load Roblox');
+        });
+    }
    
     // Add loading detection for Growden iframe
     const growdenFrame = document.getElementById('growdenFrame');
-    growdenFrame.addEventListener('load', function() {
-        console.log('✅ Growden.io loaded');
-    });
-   
-    growdenFrame.addEventListener('error', function() {
-        console.error('❌ Failed to load Growden.io');
-    });
+    if (growdenFrame) {
+        growdenFrame.addEventListener('load', function() {
+            console.log('✅ Growden.io loaded');
+        });
+       
+        growdenFrame.addEventListener('error', function() {
+            console.error('❌ Failed to load Growden.io');
+        });
+    }
+
+    // Add loading detection for CloudMoon iframe; intercept popup attempts by disabling target=_blank via sandbox
+    const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+    if (cloudmoonFrame) {
+        cloudmoonFrame.addEventListener('load', function() {
+            console.log('✅ CloudMoon loaded');
+        });
+        cloudmoonFrame.addEventListener('error', function() {
+            console.error('❌ Failed to load CloudMoon');
+        });
+    }
 });
 
 // Allow Enter key for login
