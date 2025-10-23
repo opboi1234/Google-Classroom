@@ -11,7 +11,7 @@
     <div id="loginPage" class="login-container">
         <div class="lock-icon">🔒</div>
         <h1>Game Launcher</h1>
-        <p class="subtitle">Enter your access code  to continue</p>
+        <p class="subtitle">Enter your access code to continue</p>
        
         <div class="code-input">
             <input type="text" id="accessCode" placeholder="Enter code" maxlength="3" inputmode="numeric">
@@ -32,7 +32,7 @@
     <div id="launcherPage" class="launcher-container" style="display: none;">
         <div class="container">
             <h1>🎮 Crazy Games Launcher</h1>
-            <p class="description">Enter  any game name from Crazy Games or paste a CrazyGames URL to launch it directly in your browser.</p>
+            <p class="description">Enter any game name from Crazy Games or paste a CrazyGames URL to launch it directly in your browser.</p>
            
             <div class="game-input">
                 <input type="text" id="gameName" placeholder="Enter game name or CrazyGames URL">
@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <!-- Roblox Fullscreen (FIXED) -->
+    <!-- Roblox Fullscreen -->
     <div id="robloxPage" class="fullscreen-container" style="display: none;">
         <div class="header">
             <div class="game-title">🎮 Roblox Cloud Gaming</div>
@@ -89,9 +89,32 @@
         </div>
        
         <div class="fullscreen-frame">
-            <iframe src="https://www.myandroid.org/playonline/androidemulator.php" width="100%" height="790px" frameBorder="0" style="border: 0;"></iframe><br>Brought to you by <a href="" target="_blank"></a>
+            <iframe 
+                id="robloxFrame"
+                src="https://www.myandroid.org/playonline/androidemulator.php" 
+                allowfullscreen
+                scrolling="no">
+            </iframe>
         </div>
-    </div> 
+    </div>
+
+    <!-- CloudMoon Fullscreen -->
+    <div id="cloudmoonPage" class="fullscreen-container" style="display: none;">
+        <div class="header">
+            <div class="game-title">☁️ CloudMoon Gaming</div>
+            <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+        </div>
+       
+        <div class="fullscreen-frame">
+            <iframe 
+                id="cloudmoonFrame"
+                src="https://web.cloudmoonapp.com/"
+                allowfullscreen
+                scrolling="no"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox">
+            </iframe>
+        </div>
+    </div>
 
     <script src="scripts.js"></script>
 </body>
