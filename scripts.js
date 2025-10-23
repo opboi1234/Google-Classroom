@@ -1,38 +1,123 @@
 // Page management
 let currentPage = 'login';
 
-// Intercept popup attempts from CloudMoon iframe
+// Store reference to any popup windows
+let popupWindows = [];
+
+// Intercept ALL window.open calls globally
+(function() {
+    const originalWindowOpen = window.open;
+    window.open = function(url, target, features) {
+        console.log('🔒 window.open intercepted:', url, 'Target:', target);
+        
+        // If we're on CloudMoon page, prevent popup and load in iframe
+        if (currentPage === 'cloudmoon' && url) {
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            if (cloudmoonFrame) {
+                console.log('✅ Redirecting to iframe instead of popup:', url);
+                cloudmoonFrame.src = url;
+                return {
+                    closed: false,
+                    close: function() { console.log('Fake popup closed'); },
+                    focus: function() { console.log('Fake popup focused'); }
+                }; // Return fake window object
+            }
+        }
+        
+        // For other cases, allow popup but track it
+        const popup = originalWindowOpen.call(window, url, target, features);
+        if (popup && currentPage === 'cloudmoon') {
+            popupWindows.push(popup);
+            console.log('⚠️ Popup opened, attempting to capture URL...');
+            
+            // Try to get URL and close popup immediately
+            setTimeout(() => {
+                try {
+                    if (popup && !popup.closed) {
+                        const popupUrl = popup.location.href;
+                        console.log('📍 Captured popup URL:', popupUrl);
+                        popup.close();
+                        
+                        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+                        if (cloudmoonFrame && popupUrl && popupUrl !== 'about:blank') {
+                            cloudmoonFrame.src = popupUrl;
+                        }
+                    }
+                } catch (e) {
+                    console.log('❌ Could not access popup URL (CORS):', e.message);
+                    // Popup is cross-origin, we can't get the URL
+                    // Try to close it anyway
+                    if (popup && !popup.closed) {
+                        popup.close();
+                        console.log('🔒 Closed popup without capturing URL');
+                    }
+                }
+            }, 100);
+        }
+        
+        return popup;
+    };
+})();
+
+// Monitor for popup windows and close them
+setInterval(() => {
+    if (currentPage === 'cloudmoon') {
+        popupWindows.forEach((popup, index) => {
+            try {
+                if (popup && !popup.closed) {
+                    console.log('🔍 Checking popup window...');
+                    try {
+                        const url = popup.location.href;
+                        if (url && url !== 'about:blank') {
+                            console.log('✅ Found URL in popup:', url);
+                            popup.close();
+                            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+                            if (cloudmoonFrame) {
+                                cloudmoonFrame.src = url;
+                            }
+                        }
+                    } catch (e) {
+                        // CORS - can't access URL, just close it
+                        popup.close();
+                        console.log('⚠️ Closed cross-origin popup');
+                    }
+                }
+            } catch (e) {
+                console.log('Error checking popup:', e.message);
+            }
+        });
+        // Clean up closed popups
+        popupWindows = popupWindows.filter(p => p && !p.closed);
+    }
+}, 500);
+
+// Listen for messages from iframe
 window.addEventListener('message', function(event) {
-    // Check if message is from CloudMoon iframe trying to open a new window
-    console.log('Message received:', event.data);
+    console.log('📨 Message received:', event.data, 'from:', event.origin);
     
-    // If the message contains a URL that should be loaded in the iframe
-    if (typeof event.data === 'string' && event.data.includes('http')) {
-        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-        if (cloudmoonFrame && currentPage === 'cloudmoon') {
-            console.log('Redirecting popup URL to iframe:', event.data);
-            cloudmoonFrame.src = event.data;
+    // Check for URLs in messages
+    if (typeof event.data === 'string') {
+        // Check if it's a URL
+        if (event.data.startsWith('http://') || event.data.startsWith('https://')) {
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            if (cloudmoonFrame && currentPage === 'cloudmoon') {
+                console.log('✅ Loading URL from message:', event.data);
+                cloudmoonFrame.src = event.data;
+            }
+        }
+    }
+    
+    // Check for object with URL property
+    if (typeof event.data === 'object' && event.data !== null) {
+        if (event.data.url) {
+            const cloudmoonFrame = document.getElementById('cloudmoonFrame');
+            if (cloudmoonFrame && currentPage === 'cloudmoon') {
+                console.log('✅ Loading URL from message object:', event.data.url);
+                cloudmoonFrame.src = event.data.url;
+            }
         }
     }
 });
-
-// Override window.open for CloudMoon iframe (inject this into iframe if possible)
-const originalWindowOpen = window.open;
-window.open = function(url, target, features) {
-    console.log('window.open intercepted:', url);
-    
-    // If we're on CloudMoon page, redirect to iframe instead
-    if (currentPage === 'cloudmoon' && url) {
-        const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-        if (cloudmoonFrame) {
-            cloudmoonFrame.src = url;
-            return null; // Prevent actual popup
-        }
-    }
-    
-    // Otherwise use original window.open
-    return originalWindowOpen.call(window, url, target, features);
-};
 
 // Check access code and show appropriate page
 function checkCode() {
@@ -58,7 +143,6 @@ function checkCode() {
             break;
         default:
             errorMessage.textContent = '❌ Invalid code. Please try again.';
-            // Shake animation for error
             document.getElementById('accessCode').style.animation = 'shake 0.5s';
             setTimeout(() => {
                 errorMessage.textContent = '';
@@ -84,6 +168,11 @@ function showPage(page) {
             document.getElementById('loginPage').style.display = 'block';
             document.getElementById('accessCode').value = '';
             document.getElementById('accessCode').focus();
+            // Close any open popups when returning to login
+            popupWindows.forEach(p => {
+                try { if (p && !p.closed) p.close(); } catch(e) {}
+            });
+            popupWindows = [];
             break;
         case 'launcher':
             document.getElementById('launcherPage').style.display = 'block';
@@ -91,49 +180,24 @@ function showPage(page) {
             break;
         case 'growden':
             document.getElementById('growdenPage').style.display = 'block';
-            // Reload Growden iframe when page is shown
             const growdenFrame = document.getElementById('growdenFrame');
             growdenFrame.src = growdenFrame.src;
             break;
         case 'roblox':
             document.getElementById('robloxPage').style.display = 'block';
-            // Reload Roblox iframe when page is shown
             const robloxFrame = document.getElementById('robloxFrame');
             robloxFrame.src = robloxFrame.src;
             break;
         case 'cloudmoon':
             document.getElementById('cloudmoonPage').style.display = 'block';
-            // Load CloudMoon iframe
             const cloudmoonFrame = document.getElementById('cloudmoonFrame');
-            if (!cloudmoonFrame.src || cloudmoonFrame.src === 'about:blank') {
-                cloudmoonFrame.src = 'https://web.cloudmoonapp.com/';
-            }
             
-            // Try to inject popup interceptor into iframe (may be blocked by CORS)
-            cloudmoonFrame.onload = function() {
-                try {
-                    const iframeWindow = cloudmoonFrame.contentWindow;
-                    
-                    // Inject script to intercept window.open in iframe
-                    const script = iframeWindow.document.createElement('script');
-                    script.textContent = `
-                        (function() {
-                            const originalOpen = window.open;
-                            window.open = function(url, target, features) {
-                                console.log('Intercepted popup in iframe:', url);
-                                // Send message to parent window
-                                window.parent.postMessage(url, '*');
-                                return null; // Prevent popup
-                            };
-                        })();
-                    `;
-                    iframeWindow.document.head.appendChild(script);
-                    console.log('Successfully injected popup interceptor into CloudMoon iframe');
-                } catch (e) {
-                    console.log('Could not inject script into iframe (CORS restriction):', e.message);
-                    console.log('Popup interception may not work for cross-origin iframes');
-                }
-            };
+            // Load CloudMoon
+            cloudmoonFrame.src = 'https://web.cloudmoonapp.com/';
+            
+            console.log('🎮 CloudMoon loaded. Popup interception active.');
+            console.log('⚠️ Note: Due to CORS, capturing cross-origin popup URLs may not work.');
+            console.log('💡 Popups will be automatically closed if detected.');
             break;
     }
 }
@@ -145,11 +209,9 @@ function showLogin() {
 
 // Function to launch a game based on user input
 function launchGame() {
-    // Get the input value
     const gameInput = document.getElementById('gameName');
     const input = gameInput.value.trim();
    
-    // Validate input
     if (!input) {
         alert('⚠️ Please enter a game name or URL');
         gameInput.focus();
@@ -159,10 +221,8 @@ function launchGame() {
     let newSrc;
     let gameTitle;
    
-    // Check if input is a CrazyGames URL
     if (input.includes('crazygames.com/game/')) {
         try {
-            // Extract game identifier from URL
             const url = new URL(input);
             const pathParts = url.pathname.split('/');
             const gameIdentifier = pathParts[pathParts.length - 1];
@@ -177,7 +237,6 @@ function launchGame() {
             return;
         }
     }
-    // Check if input is a games.crazygames.com URL
     else if (input.includes('games.crazygames.com')) {
         newSrc = input;
         try {
@@ -188,18 +247,14 @@ function launchGame() {
             gameTitle = 'Custom URL';
         }
     }
-    // Treat as game name
     else {
         const formattedGameName = input.replace(/\s+/g, '-').toLowerCase();
         newSrc = `https://games.crazygames.com/en_US/${formattedGameName}/index.html`;
         gameTitle = input;
     }
    
-    // Update the iframe source
     const gameFrame = document.getElementById('gameFrame');
     gameFrame.src = newSrc;
-   
-    // Update the game title display
     document.getElementById('currentGame').textContent = gameTitle;
    
     console.log(`🎮 Loading game: ${gameTitle}`);
@@ -208,13 +263,9 @@ function launchGame() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Focus on access code input
     document.getElementById('accessCode').focus();
-   
-    // Set initial game title
     document.getElementById('currentGame').textContent = 'Ragdoll Archers';
    
-    // Add loading detection for game iframe
     const gameFrame = document.getElementById('gameFrame');
     gameFrame.addEventListener('load', function() {
         console.log('✅ Game loaded successfully');
@@ -225,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Failed to load the game. Please check the game name and try again.');
     });
    
-    // Add loading detection for Roblox iframe
     const robloxFrame = document.getElementById('robloxFrame');
     robloxFrame.addEventListener('load', function() {
         console.log('✅ Roblox cloud gaming loaded');
@@ -235,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Failed to load Roblox');
     });
    
-    // Add loading detection for Growden iframe
     const growdenFrame = document.getElementById('growdenFrame');
     growdenFrame.addEventListener('load', function() {
         console.log('✅ Growden.io loaded');
@@ -245,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Failed to load Growden.io');
     });
     
-    // Add loading detection for CloudMoon iframe
     const cloudmoonFrame = document.getElementById('cloudmoonFrame');
     cloudmoonFrame.addEventListener('load', function() {
         console.log('✅ CloudMoon loaded');
@@ -281,7 +329,6 @@ window.addEventListener('beforeunload', function(e) {
 
 // Add keyboard shortcuts
 document.addEventListener('keydown', function(event) {
-    // ESC key to return to login (except when typing in input fields)
     if (event.key === 'Escape' && 
         event.target.tagName !== 'INPUT' && 
         currentPage !== 'login') {
@@ -290,7 +337,6 @@ document.addEventListener('keydown', function(event) {
         }
     }
    
-    // F11 for fullscreen toggle (info message)
     if (event.key === 'F11') {
         console.log('💡 Tip: Press F11 to toggle fullscreen mode');
     }
@@ -302,7 +348,7 @@ console.log('%cAccess Codes:', 'color: #ff6b6b; font-size: 14px; font-weight: bo
 console.log('%c918 - CrazyGames Launcher', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c819 - Growden.io', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c818 - Roblox Cloud Gaming', 'color: #4fc3f7; font-size: 12px;');
-console.log('%c919 - CloudMoon Gaming', 'color: #4fc3f7; font-size: 12px;');
+console.log('%c919 - CloudMoon Gaming (Popup Interception Active)', 'color: #4fc3f7; font-size: 12px;');
 console.log('%c\nPress ESC to return to login', 'color: #888; font-size: 10px;');
 
 // Auto-clear access code on focus
