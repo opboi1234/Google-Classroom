@@ -1,98 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Classroom</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Launcher</title>
+  <style>
+    /* ===== GLOBAL ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* ===== LOGIN PAGE ===== */
+    .login-container {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      backdrop-filter: blur(10px);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    h1 {
+      color: #ff6b6b;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+      text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    }
+
+    .subtitle {
+      color: #ccc;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+
+    #accessCode {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.5rem;
+      text-align: center;
+      border: 2px solid #4fc3f7;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: all 0.3s ease;
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+    }
+
+    #accessCode:focus {
+      outline: none;
+      border-color: #ff6b6b;
+      box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+    }
+
+    .enter-btn {
+      padding: 15px 30px;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, #ff6b6b, #ff5252);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .enter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
+    }
+
+    /* ===== LAUNCHER / GAME PAGE ===== */
+    .launcher-container {
+      display: none;
+      height: 100vh;
+      width: 100%;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      position: relative;
+    }
+
+    .launcher-header {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      z-index: 10;
+    }
+
+    .launcher-header a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .launcher-header a:hover {
+      color: #ff6b6b;
+    }
+
+    .game-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
 </head>
 <body>
-    <!-- Login Page -->
-    <div id="loginPage" class="login-container">
-        <div class="lock-icon">🔒</div>
-        <h1>Game Launcher</h1>
-        <p class="subtitle">Enter your access code to continue</p>
-       
-        <div class="code-input">
-            <input type="text" id="accessCode" placeholder="Enter code" maxlength="3" inputmode="numeric">
-        </div>
-       
-        <div class="buttons">
-            <button class="enter-btn" onclick="checkCode()">Enter</button>
-        </div>
-       
-        <div class="error-message" id="errorMessage"></div>
-       
-        <div class="hint">
-            <strong>Hint:</strong> 
-        </div>
+
+  <!-- LOGIN PAGE -->
+  <div class="login-container" id="loginPage">
+    <h1>Enter Access Code</h1>
+    <p class="subtitle">Type the secret code to launch the game</p>
+    <input type="text" id="accessCode" placeholder="Enter Code">
+    <button class="enter-btn" onclick="checkCode()">Enter</button>
+    <p id="error" style="color:#ff6b6b; margin-top:10px; font-weight:bold;"></p>
+  </div>
+
+  <!-- GAME / LAUNCHER PAGE -->
+  <div class="launcher-container" id="launcherPage">
+    <div class="launcher-header">
+      <a href="#" onclick="backToLogin()">← Back to Login</a>
+      <h2>Growden.io</h2>
     </div>
 
-    <!-- Main Game Launcher (CrazyGames) -->
-    <div id="launcherPage" class="launcher-container" style="display: none;">
-        <div class="container">
-            <h1>🎮 Crazy Games Launcher</h1>
-            <p class="description">Enter  any game name from Crazy Games or paste a CrazyGames URL to launch it directly in your browser.</p>
-           
-            <div class="game-input">
-                <input type="text" id="gameName" placeholder="Enter game name or CrazyGames URL">
-                <button id="launchButton" onclick="launchGame()">Launch Game</button>
-            </div>
-           
-            <h2>Currently Playing: <span id="currentGame">Ragdoll Archers</span></h2>
-           
-            <div class="game-frame">
-                <iframe id="gameFrame" src="https://games.crazygames.com/en_US/ragdoll-archers/index.html" allowfullscreen></iframe>
-            </div>
-           
-            <div class="instructions">
-                <h2>📋 How to Use:</h2>
-                <ul>
-                    <li>Enter the name of any game available on Crazy Games (e.g. "Ragdoll Archers", "Rooftop Snipers")</li>
-                    <li>The launcher will automatically format game names (replace spaces with hyphens)</li>
-                    <li>Click "Launch Game" or press Enter to load the game</li>
-                    <li>Enjoy playing directly in your browser!</li>
-                </ul>
-                <p class="example">Example: "Rooftop Snipers" becomes "rooftop-snipers"</p>
-                <p class="example">Or paste a full URL like: https://www.crazygames.com/game/grow-a-garden---growden-io</p>
-            </div>
-           
-            <footer>
-                <p>Note: This launcher works with games that follow the standard Crazy Games URL structure.</p>
-                <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-            </footer>
-        </div>
+    <div class="game-frame">
+      <iframe src="https://growden.io" allowfullscreen></iframe>
     </div>
+  </div>
 
-    <!-- Growden Fullscreen -->
-    <div id="growdenPage" class="fullscreen-container" style="display: none;">
-        <div class="header">
-            <div class="game-title">🌱 Growden.io</div>
-            <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        </div>
-       
-        <div class="fullscreen-frame">
-            <iframe
-                id="growdenFrame"
-                src="https://growden.io/"
-                allowfullscreen
-                scrolling="no">
-            </iframe>
-        </div>
-    </div>
+  <script>
+    function checkCode() {
+      const code = document.getElementById('accessCode').value.trim();
+      const error = document.getElementById('error');
+      if (code === '1234') { // you can change this code
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('launcherPage').style.display = 'block';
+        document.body.classList.add('game-active');
+      } else {
+        error.textContent = "Incorrect code!";
+      }
+    }
 
-    <!-- Roblox Fullscreen (FIXED) -->
-    <div id="robloxPage" class="fullscreen-container" style="display: none;">
-        <div class="header">
-            <div class="game-title">🎮 Roblox Cloud Gaming</div>
-            <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        </div>
-       
-        <div class="fullscreen-frame">
-            <iframe src="https://www.myandroid.org/playonline/androidemulator.php" width="100%" height="790px" frameBorder="0" style="border: 0;"></iframe><br>Brought to you by <a href="" target="_blank"></a>
-        </div>
-    </div> 
+    function backToLogin() {
+      document.getElementById('launcherPage').style.display = 'none';
+      document.getElementById('loginPage').style.display = 'block';
+      document.body.classList.remove('game-active');
+    }
+  </script>
 
-    <script src="scripts.js"></script>
 </body>
 </html>
+
