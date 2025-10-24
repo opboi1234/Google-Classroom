@@ -23,7 +23,7 @@
 
     <div class="error-message" id="errorMessage"></div>
     <div class="hint">
-      <strong>Codes:</strong> 918 = CrazyGames • 919 = CloudMoon • 819 = Growden • 818 = Roblox
+      <strong>Hint:</strong> 918 = CrazyGames • 919 = CloudMoon • 819 = Growden • 818 = Roblox
     </div>
   </div>
 
@@ -40,8 +40,8 @@
 
       <h2>Currently Playing: <span id="currentGame">Ragdoll Archers</span></h2>
 
-      <!-- Scrollable container -->
-      <div class="game-frame">
+      <!-- Scrollable container (the iframe itself stays fixed size; the container scrolls) -->
+      <div class="game-frame" id="gameScroll">
         <iframe
           id="gameFrame"
           src="https://games.crazygames.com/en_US/ragdoll-archers/index.html"
@@ -60,6 +60,7 @@
       </div>
 
       <footer>
+        <p>Tip: If a game doesn’t load, try another title or paste the direct <code>games.crazygames.com</code> URL.</p>
         <button class="back-btn" data-back>← Back to Login</button>
       </footer>
     </div>
@@ -87,7 +88,7 @@
     </div>
   </div>
 
-  <!-- CloudMoon Fullscreen (POPUPS BLOCKED) -->
+  <!-- CloudMoon Fullscreen -->
   <div id="cloudmoonPage" class="fullscreen-container" style="display:none;">
     <div class="header">
       <div class="game-title">☁️ CloudMoon Gaming</div>
@@ -99,10 +100,7 @@
         src="about:blank"
         allowfullscreen
         scrolling="yes"
-        /* IMPORTANT: no allow-popups, no allow-popups-to-escape-sandbox */
-        sandbox="allow-scripts allow-forms allow-same-origin allow-pointer-lock"
-        allow="autoplay; fullscreen; gamepad; microphone; camera"
-        referrerpolicy="no-referrer">
+        allow="autoplay; fullscreen; gamepad; microphone; camera">
       </iframe>
     </div>
   </div>
