@@ -40,8 +40,8 @@
 
       <h2>Currently Playing: <span id="currentGame">Ragdoll Archers</span></h2>
 
-      <!-- Scrollable container -->
-      <div class="game-frame">
+      <!-- Scrollable container (the iframe itself stays fixed size; the container scrolls) -->
+      <div class="game-frame" id="gameScroll">
         <iframe
           id="gameFrame"
           src="https://games.crazygames.com/en_US/ragdoll-archers/index.html"
@@ -54,7 +54,7 @@
         <h2>📋 How to Use</h2>
         <ul>
           <li>Enter a game name (spaces become hyphens) or paste a CrazyGames URL.</li>
-          <li>Examples: "Rooftop Snipers" → <code>rooftop-snipers</code></li>
+          <li>Example: "Rooftop Snipers" → <code>rooftop-snipers</code></li>
           <li>Full URL example: <code>https://www.crazygames.com/game/grow-a-garden---growden-io</code></li>
         </ul>
       </div>
@@ -108,3 +108,4 @@
   <script src="scripts.js"></script>
 </body>
 </html>
+
