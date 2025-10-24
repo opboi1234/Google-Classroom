@@ -1,10 +1,3 @@
-// ============================
-// CONFIG: CloudMoon behavior
-// 'capture' => load the URL that tries to open in a new tab into the iframe
-// 'blank'   => force popups to open about:blank (prevents leaving the page)
-// ============================
-const CLOUDMOON_MODE = 'capture'; // change to 'blank' if you prefer
-
 // Access Codes
 const CODES = {
   LAUNCHER: '918',
@@ -13,38 +6,22 @@ const CODES = {
   CLOUDMOON:'919',
 };
 
-// State
 let currentPage = 'login';
-
-// Helper
 const $ = (id) => document.getElementById(id);
 
-// ---- Intercept window.open only on CloudMoon page ----
-(function interceptWindowOpen() {
+// IMPORTANT: Hard block any popups from your *top page* too.
+(function hardBlockPopupsOnTop() {
   const originalOpen = window.open;
-
-  window.open = function(url = '', target = '_blank', features = '') {
-    if (currentPage === 'cloudmoon') {
-      if (CLOUDMOON_MODE === 'capture') {
-        console.log('🌙 Intercepted popup (capture):', url);
-        const frame = $('cloudmoonFrame');
-        if (frame && url) frame.src = url;
-        return { closed:false, close(){}, focus(){}, blur(){}, postMessage(){} };
-      }
-      if (CLOUDMOON_MODE === 'blank') {
-        console.log('🌙 Intercepted popup (blank) → about:blank');
-        return originalOpen.call(window, 'about:blank', target, features);
-      }
-    }
-    return originalOpen.call(window, url, target, features);
+  window.open = function() {
+    console.log('🚫 Popup attempt on top window blocked.');
+    return { closed:true, close(){}, focus(){}, blur(){}, postMessage(){} };
   };
 })();
 
-// ---- Page switching ----
+// Page switching
 function showPage(page) {
   currentPage = page;
 
-  // Hide all
   ['loginPage','launcherPage','growdenPage','robloxPage','cloudmoonPage']
     .forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
 
@@ -74,31 +51,28 @@ function showPage(page) {
 
     case 'cloudmoon':
       $('cloudmoonPage').style.display = 'block';
+      // POPUPS BLOCKED by iframe sandbox (no allow-popups). Just load homepage here:
       $('cloudmoonFrame').src = 'https://web.cloudmoonapp.com/';
-      console.log('🎮 CloudMoon ready. Interceptor mode:', CLOUDMOON_MODE);
+      console.log('🌙 CloudMoon loaded with sandbox — popups are blocked.');
       break;
   }
 }
 
 function showLogin() { showPage('login'); }
 
-// ---- Login logic ----
+// Login
 function checkCode() {
   const code = $('accessCode').value.trim();
   const error = $('errorMessage');
 
   if (code === CODES.LAUNCHER) {
-    error.textContent = '';
-    showPage('launcher');
+    error.textContent = ''; showPage('launcher');
   } else if (code === CODES.GROWDEN) {
-    error.textContent = '';
-    showPage('growden');
+    error.textContent = ''; showPage('growden');
   } else if (code === CODES.ROBLOX) {
-    error.textContent = '';
-    showPage('roblox');
+    error.textContent = ''; showPage('roblox');
   } else if (code === CODES.CLOUDMOON) {
-    error.textContent = '';
-    showPage('cloudmoon');
+    error.textContent = ''; showPage('cloudmoon');
   } else {
     error.textContent = '❌ Invalid code. Please try again.';
     $('accessCode').style.animation = 'shake 0.5s';
@@ -106,7 +80,7 @@ function checkCode() {
   }
 }
 
-// ---- CrazyGames launcher ----
+// CrazyGames launcher
 function launchGame() {
   const inputEl = $('gameName');
   const input = (inputEl.value || '').trim();
@@ -119,22 +93,19 @@ function launchGame() {
   let url = '';
   let title = '';
 
-  // Case 1: crazygames.com/game/<slug>
   if (input.includes('crazygames.com/game/')) {
     try {
       const u = new URL(input);
-      const slug = u.pathname.split('/').pop();                 // e.g. grow-a-garden---growden-io
-      const base = slug.split('---')[0].replace(/-/g, ' ');     // grow a garden
-      title = base.replace(/\b\w/g, c => c.toUpperCase());      // Grow A Garden
-      const dashed = base.trim().replace(/\s+/g, '-');          // grow-a-garden
+      const slug = u.pathname.split('/').pop();
+      const base = slug.split('---')[0].replace(/-/g, ' ');
+      title = base.replace(/\b\w/g, c => c.toUpperCase());
+      const dashed = base.trim().replace(/\s+/g, '-');
       url = `https://games.crazygames.com/en_US/${dashed}/index.html`;
     } catch {
       alert('❌ Invalid CrazyGames URL.');
       return;
     }
-  }
-  // Case 2: direct games.crazygames.com link
-  else if (input.includes('games.crazygames.com')) {
+  } else if (input.includes('games.crazygames.com')) {
     url = input;
     try {
       const parts = new URL(input).pathname.split('/');
@@ -144,9 +115,7 @@ function launchGame() {
     } catch {
       title = 'Custom Game';
     }
-  }
-  // Case 3: plain name
-  else {
+  } else {
     const slug = input.toLowerCase().replace(/\s+/g, '-');
     url = `https://games.crazygames.com/en_US/${slug}/index.html`;
     title = input.replace(/\b\w/g, c => c.toUpperCase());
@@ -157,28 +126,22 @@ function launchGame() {
   console.log('🎮 Loading:', title, '→', url);
 }
 
-// ---- Events ----
+// Events
 document.addEventListener('DOMContentLoaded', () => {
   $('accessCode').focus();
 
-  // Buttons/keys
   $('enterBtn').addEventListener('click', checkCode);
   $('accessCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkCode(); });
+
   $('launchButton').addEventListener('click', launchGame);
   $('gameName').addEventListener('keydown', (e) => { if (e.key === 'Enter') launchGame(); });
 
-  // Back buttons
   document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', showLogin));
 
-  // Initial page
   showLogin();
 
-  // Log helpful info
-  console.log('%c🎮 Game Launcher Initialized', 'color:#4fc3f7;font-size:18px;font-weight:bold;');
-  console.log('Access Codes → 918: CrazyGames • 919: CloudMoon • 819: Growden • 818: Roblox');
-});
-
-// Optional: warn if leaving
-window.addEventListener('beforeunload', (e) => {
-  if (currentPage !== 'login') { e.preventDefault(); e.returnValue = ''; }
+  // Safety tip if leaving
+  window.addEventListener('beforeunload', (e) => {
+    if (currentPage !== 'login') { e.preventDefault(); e.returnValue = ''; }
+  });
 });
