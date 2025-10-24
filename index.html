@@ -5,6 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Classroom</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* --- Inline fallback styles (optional if using styles.css) --- */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f4f4f4;
+            color: #222;
+        }
+
+        .login-container, .launcher-container, .fullscreen-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .lock-icon {
+            font-size: 3rem;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            width: 200px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin-top: 10px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .game-frame {
+            width: 100%;
+            height: 80vh;
+            overflow: auto; /* enables scrolling inside the iframe container */
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .game-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        footer {
+            margin-top: 1rem;
+        }
+
+        /* Optional: sleek scrollbar styling */
+        .game-frame::-webkit-scrollbar {
+            width: 10px;
+        }
+        .game-frame::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+        .game-frame::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
 </head>
 <body>
     <!-- Login Page -->
@@ -41,18 +113,14 @@
            
             <h2>Currently Playing: <span id="currentGame">Ragdoll Archers</span></h2>
            
+            <!-- Scrollable CrazyGames iframe -->
             <div class="game-frame">
-                <iframe 
-    id="gameFrame"
-<iframe 
-    id="gameFrame"
-    src="https://games.crazygames.com/en_US/ragdoll-archers/index.html"
-    allowfullscreen
-    scrolling="yes"
-    style="width: 100%; height: 80vh; border: none; overflow: auto;">
-</iframe>
-
-
+                <iframe
+                    id="gameFrame"
+                    src="https://games.crazygames.com/en_US/ragdoll-archers/index.html"
+                    allowfullscreen
+                    scrolling="yes">
+                </iframe>
             </div>
            
             <div class="instructions">
@@ -126,8 +194,47 @@
         </div>
     </div>
 
-    <script src="scripts.js"></script>
+    <script>
+        // --- Basic Script for Navigation and Game Launch ---
+        function showLogin() {
+            document.getElementById('loginPage').style.display = 'block';
+            document.getElementById('launcherPage').style.display = 'none';
+            document.getElementById('growdenPage').style.display = 'none';
+            document.getElementById('robloxPage').style.display = 'none';
+            document.getElementById('cloudmoonPage').style.display = 'none';
+        }
+
+        function checkCode() {
+            const code = document.getElementById('accessCode').value.trim();
+            const error = document.getElementById('errorMessage');
+
+            if (code === '123') {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('launcherPage').style.display = 'block';
+                error.textContent = '';
+            } else {
+                error.textContent = 'Invalid code. Try again.';
+            }
+        }
+
+        function launchGame() {
+            const input = document.getElementById('gameName').value.trim();
+            const frame = document.getElementById('gameFrame');
+            const current = document.getElementById('currentGame');
+
+            if (!input) return;
+
+            let url = '';
+            if (input.startsWith('https://')) {
+                url = input;
+            } else {
+                const gameSlug = input.toLowerCase().replace(/\s+/g, '-');
+                url = `https://games.crazygames.com/en_US/${gameSlug}/index.html`;
+            }
+
+            frame.src = url;
+            current.textContent = input;
+        }
+    </script>
 </body>
 </html>
-
-
