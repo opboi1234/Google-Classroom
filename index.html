@@ -124,4 +124,154 @@
     <div class="container">
       <h1>🎮 Crazy Games Launcher</h1>
       <p class="description">
-        Enter
+        Enter any game name from Crazy Games or paste a CrazyGames URL to launch it directly in your browser.
+      </p>
+
+      <div class="game-input">
+        <input type="text" id="gameName" placeholder="Enter game name or CrazyGames URL">
+        <button id="launchButton" onclick="launchGame()">Launch Game</button>
+      </div>
+
+      <h2>Currently Playing: <span id="currentGame">Ragdoll Archers</span></h2>
+
+      <!-- Scrollable CrazyGames iframe -->
+      <div class="game-frame">
+        <iframe
+          id="gameFrame"
+          src="https://games.crazygames.com/en_US/ragdoll-archers/index.html"
+          allowfullscreen
+          scrolling="yes">
+        </iframe>
+      </div>
+
+      <div class="instructions">
+        <h2>📋 How to Use:</h2>
+        <ul>
+          <li>Enter the name of any game available on Crazy Games (e.g. "Ragdoll Archers", "Rooftop Snipers")</li>
+          <li>The launcher will automatically format game names (replace spaces with hyphens)</li>
+          <li>Click "Launch Game" or press Enter to load the game</li>
+          <li>Enjoy playing directly in your browser!</li>
+        </ul>
+        <p class="example">Example: "Rooftop Snipers" → "rooftop-snipers"</p>
+        <p class="example">Or paste a full URL like: <br>
+          <code>https://www.crazygames.com/game/grow-a-garden---growden-io</code></p>
+      </div>
+
+      <footer>
+        <p>Note: This launcher works with games that follow the standard Crazy Games URL structure.</p>
+        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Growden Fullscreen -->
+  <div id="growdenPage" class="fullscreen-container" style="display: none;">
+    <div class="header">
+      <div class="game-title">🌱 Growden.io</div>
+      <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+    </div>
+
+    <div class="fullscreen-frame">
+      <iframe
+        id="growdenFrame"
+        src="https://growden.io/"
+        allowfullscreen
+        scrolling="yes">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- Roblox Fullscreen -->
+  <div id="robloxPage" class="fullscreen-container" style="display: none;">
+    <div class="header">
+      <div class="game-title">🎮 Roblox Cloud Gaming</div>
+      <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+    </div>
+
+    <div class="fullscreen-frame">
+      <iframe 
+        id="robloxFrame"
+        src="https://www.myandroid.org/playonline/androidemulator.php" 
+        allowfullscreen
+        scrolling="yes">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- CloudMoon Fullscreen -->
+  <div id="cloudmoonPage" class="fullscreen-container" style="display: none;">
+    <div class="header">
+      <div class="game-title">☁️ CloudMoon Gaming</div>
+      <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+    </div>
+
+    <div class="fullscreen-frame">
+      <iframe 
+        id="cloudmoonFrame"
+        src="about:blank"
+        allowfullscreen
+        scrolling="yes"
+        allow="autoplay; fullscreen; gamepad; microphone; camera">
+      </iframe>
+    </div>
+  </div>
+
+  <script>
+    // Show only login on load
+    function showLogin() {
+      document.getElementById('loginPage').style.display = 'block';
+      document.getElementById('launcherPage').style.display = 'none';
+      document.getElementById('growdenPage').style.display = 'none';
+      document.getElementById('robloxPage').style.display = 'none';
+      document.getElementById('cloudmoonPage').style.display = 'none';
+    }
+
+    // Check access code
+    function checkCode() {
+      const code = document.getElementById('accessCode').value.trim();
+      const error = document.getElementById('errorMessage');
+
+      // ✅ Your code here
+      const correctCode = "123";
+
+      if (code === correctCode) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('launcherPage').style.display = 'block';
+        error.textContent = '';
+      } else {
+        error.textContent = '❌ Invalid code. Try again.';
+      }
+    }
+
+    // Allow Enter key to trigger checkCode
+    document.addEventListener('DOMContentLoaded', () => {
+      const codeInput = document.getElementById('accessCode');
+      if (codeInput) {
+        codeInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') checkCode();
+        });
+      }
+    });
+
+    // Game launcher function
+    function launchGame() {
+      const input = document.getElementById('gameName').value.trim();
+      const frame = document.getElementById('gameFrame');
+      const current = document.getElementById('currentGame');
+
+      if (!input) return;
+
+      let url = '';
+      if (input.startsWith('https://')) {
+        url = input;
+      } else {
+        const gameSlug = input.toLowerCase().replace(/\s+/g, '-');
+        url = `https://games.crazygames.com/en_US/${gameSlug}/index.html`;
+      }
+
+      frame.src = url;
+      current.textContent = input;
+    }
+  </script>
+</body>
+</html>
