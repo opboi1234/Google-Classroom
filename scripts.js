@@ -16,45 +16,26 @@ const CODES = {
 // State
 let currentPage = 'login';
 
-// Safe DOM getter
+// Helper
 const $ = (id) => document.getElementById(id);
 
-// ---- Window.open interception for CloudMoon ----
+// ---- Intercept window.open only on CloudMoon page ----
 (function interceptWindowOpen() {
   const originalOpen = window.open;
 
   window.open = function(url = '', target = '_blank', features = '') {
-    // Only intervene on CloudMoon page
     if (currentPage === 'cloudmoon') {
-      // Mode A: capture -> load the URL into the CloudMoon iframe instead of opening a tab
       if (CLOUDMOON_MODE === 'capture') {
-        try {
-          console.log('🌙 Intercepted popup (capture):', url);
-          const frame = $('cloudmoonFrame');
-          if (frame && url) frame.src = url;
-
-          // Return a stub window object so sites think a window exists
-          return {
-            closed: false,
-            close: function(){},
-            focus: function(){},
-            blur: function(){},
-            postMessage: function(){}
-          };
-        } catch (e) {
-          console.warn('CloudMoon capture failed, falling back to about:blank', e);
-          return originalOpen.call(window, 'about:blank', target, features);
-        }
+        console.log('🌙 Intercepted popup (capture):', url);
+        const frame = $('cloudmoonFrame');
+        if (frame && url) frame.src = url;
+        return { closed:false, close(){}, focus(){}, blur(){}, postMessage(){} };
       }
-
-      // Mode B: blank -> always open about:blank
       if (CLOUDMOON_MODE === 'blank') {
-        console.log('🌙 Intercepted popup (blank). Forcing about:blank');
+        console.log('🌙 Intercepted popup (blank) → about:blank');
         return originalOpen.call(window, 'about:blank', target, features);
       }
     }
-
-    // Default behavior elsewhere
     return originalOpen.call(window, url, target, features);
   };
 })();
@@ -64,11 +45,8 @@ function showPage(page) {
   currentPage = page;
 
   // Hide all
-  $('loginPage').style.display = 'none';
-  $('launcherPage').style.display = 'none';
-  $('growdenPage').style.display = 'none';
-  $('robloxPage').style.display = 'none';
-  $('cloudmoonPage').style.display = 'none';
+  ['loginPage','launcherPage','growdenPage','robloxPage','cloudmoonPage']
+    .forEach(id => { const el = $(id); if (el) el.style.display = 'none'; });
 
   switch (page) {
     case 'login':
@@ -96,7 +74,6 @@ function showPage(page) {
 
     case 'cloudmoon':
       $('cloudmoonPage').style.display = 'block';
-      // Start CloudMoon landing page; popups will be intercepted per CLOUDMOON_MODE
       $('cloudmoonFrame').src = 'https://web.cloudmoonapp.com/';
       console.log('🎮 CloudMoon ready. Interceptor mode:', CLOUDMOON_MODE);
       break;
@@ -182,42 +159,26 @@ function launchGame() {
 
 // ---- Events ----
 document.addEventListener('DOMContentLoaded', () => {
-  // focus
   $('accessCode').focus();
 
-  // Enter buttons
+  // Buttons/keys
   $('enterBtn').addEventListener('click', checkCode);
-  $('accessCode').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') checkCode();
-  });
-
-  const launchBtn = $('launchButton');
-  if (launchBtn) launchBtn.addEventListener('click', launchGame);
-  const gameName = $('gameName');
-  if (gameName) gameName.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') launchGame();
-  });
+  $('accessCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkCode(); });
+  $('launchButton').addEventListener('click', launchGame);
+  $('gameName').addEventListener('keydown', (e) => { if (e.key === 'Enter') launchGame(); });
 
   // Back buttons
-  document.querySelectorAll('[data-back]').forEach(btn => {
-    btn.addEventListener('click', showLogin);
-  });
-
-  // ESC to go back (unless typing)
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.activeElement?.tagName !== 'INPUT' && currentPage !== 'login') {
-      if (confirm('Return to login page?')) showLogin();
-    }
-  });
+  document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', showLogin));
 
   // Initial page
   showLogin();
+
+  // Log helpful info
+  console.log('%c🎮 Game Launcher Initialized', 'color:#4fc3f7;font-size:18px;font-weight:bold;');
+  console.log('Access Codes → 918: CrazyGames • 919: CloudMoon • 819: Growden • 818: Roblox');
 });
 
 // Optional: warn if leaving
 window.addEventListener('beforeunload', (e) => {
-  if (currentPage !== 'login') {
-    e.preventDefault();
-    e.returnValue = '';
-  }
+  if (currentPage !== 'login') { e.preventDefault(); e.returnValue = ''; }
 });
